@@ -16,6 +16,7 @@ pub enum Msg {
 struct MessageData {
     from: String,
     message: String,
+    time: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -49,6 +50,31 @@ pub struct Chat {
     wss: WebsocketService,
     messages: Vec<MessageData>,
     typing_user: Option<String>,
+}
+
+const USER_COLORS: [&str; 12] = [
+    "bg-pink-200",
+    "bg-yellow-200",
+    "bg-green-200",
+    "bg-blue-200",
+    "bg-purple-200",
+    "bg-orange-200",
+    "bg-red-200",
+    "bg-indigo-200",
+    "bg-teal-200",
+    "bg-lime-200",
+    "bg-amber-200",
+    "bg-cyan-200",
+];
+
+fn color_for_user(name: &str) -> &'static str {
+    use std::hash::{Hash, Hasher};
+    use std::collections::hash_map::DefaultHasher;
+
+    let mut hasher = DefaultHasher::new();
+    name.hash(&mut hasher);
+    let index = (hasher.finish() as usize) % USER_COLORS.len();
+    USER_COLORS[index]
 }
 
 impl Component for Chat {
@@ -210,8 +236,23 @@ impl Component for Chat {
                         {
                             self.messages.iter().map(|m| {
                                 let user = self.users.iter().find(|u| u.name == m.from).unwrap();
+                                let timestamp_html = if let Some(timestamp) = m.time {
+                                    if let Some(dt) = chrono::NaiveDateTime::from_timestamp_opt(timestamp / 1000, 0) {
+                                        html! {
+                                            <div class="text-[10px] text-gray-400 mt-1">
+                                                {format!("Sent at {}", dt.format("%Y-%m-%d %H:%M:%S"))}
+                                            </div>
+                                        }
+                                    } else {
+                                        html! {}
+                                    }
+                                } else {
+                                    html! {}
+                                };       
+                                let bubble_class = color_for_user(&m.from);
+
                                 html!{
-                                    <div class="flex items-end w-3/6 bg-gray-100 m-8 rounded-tl-lg rounded-tr-lg rounded-br-lg ">
+                                    <div class={classes!("flex", "items-end", "w-3/6", bubble_class, "m-8", "rounded-tl-lg", "rounded-tr-lg", "rounded-br-lg")}>
                                         <img class="w-8 h-8 rounded-full m-3" src={user.avatar.clone()} alt="avatar"/>
                                         <div class="p-3">
                                             <div class="text-sm">
@@ -223,6 +264,7 @@ impl Component for Chat {
                                                 } else {
                                                     {m.message.clone()}
                                                 }
+                                                {timestamp_html}
                                             </div>
                                         </div>
                                     </div>
@@ -262,3 +304,4 @@ impl Component for Chat {
         }
     }
 }
+
