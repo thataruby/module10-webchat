@@ -20,3 +20,11 @@ I added a small green circle below each user's avatar in the user list to show t
 
 - Stying
 For fun, I customized the user list panel by changing its background color to a soft purple (bg-purple-100). I also changed the default avatar for all users to a picture of my favorite actress, Jodie Comer, by modifying the avatar URL inside the UserProfile creation logic.
+
+> Bonus: Using Rust-based server
+ 
+To complete the bonus, I added a Rust-based server adapted from Tutorial 2 (named tutorial_2 server here) and used that instead of the original JavaScript WebSocket server. The Rust server was modified to handle structured JSON messages, matching the format used by the YewChat frontend (messageType, data, dataArray). I reused the existing server.rs logic and added serde for parsing and generating JSON, and I tracked connected users in a shared map using Arc<Mutex<...>>. Messages were serialized and broadcasted to all clients using tokio-websockets.
+
+This was a successful change because the frontend was able to register users, show real-time updates, typing notifications, and broadcast messages—all without any changes to the frontend logic other than switching the WebSocket URL to port 2000. The server correctly mimics the behavior of the original JS server while leveraging Rust’s strong type safety and concurrency model.
+
+Personally, I prefer the Rust version because I feel like it is easier to mantain and is less error prone for real- time concurrent applications. It also integrates smoothly with the async ecosystem provided by tokio, which made it easy to handle multiple clients and broadcasts efficiently.
